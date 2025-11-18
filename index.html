@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Git Commit Message Analyzer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero__content">
+        <p class="eyebrow">Quality Insights • Faster Reviews</p>
+        <h1>Understand every commit at a glance.</h1>
+        <p class="subtitle">
+          Paste a GitHub repository URL or a list of commit messages and get an
+          instant summary of tone, scope, and quality guidelines compliance.
+        </p>
+        <div class="cta-group">
+          <a class="btn primary" href="#analyzer">Analyze commits</a>
+          <a class="btn ghost" href="#guidelines">View guidelines</a>
+        </div>
+      </div>
+      <div class="hero__card">
+        <div class="card__header">
+          <span>Sample Output</span>
+          <span class="badge positive">Healthy</span>
+        </div>
+        <ul class="card__list">
+          <li>
+            <p class="card__title">Average length</p>
+            <p class="card__value">52 chars</p>
+          </li>
+          <li>
+            <p class="card__title">Imperative tone</p>
+            <p class="card__value">92%</p>
+          </li>
+          <li>
+            <p class="card__title">Conventional commits</p>
+            <p class="card__value">17 / 20</p>
+          </li>
+        </ul>
+      </div>
+    </header>
+
+    <main>
+      <section id="analyzer" class="panel panel--form">
+        <div class="panel__header">
+          <p class="eyebrow">Step 1</p>
+          <h2>Provide commits to analyze</h2>
+          <p class="subtitle">
+            Authenticate with GitHub or drop raw commit messages below. Nothing
+            is stored — everything stays in your browser.
+          </p>
+        </div>
+        <form class="grid">
+          <label class="input-block">
+            <span>Repository URL</span>
+            <input
+              type="url"
+              placeholder="https://github.com/username/project"
+              required
+            />
+            <small>We fetch recent commits via the GitHub API.</small>
+          </label>
+
+          <label class="input-block">
+            <span>Personal access token (optional)</span>
+            <input type="password" placeholder="ghp_xxxxxxxxxxxxx" />
+            <small>Only required for private repositories.</small>
+          </label>
+
+          <label class="input-block input-block--full">
+            <span>Commit messages</span>
+            <textarea
+              rows="6"
+              placeholder="feat: add OAuth flow&#10;fix: correct typo in README"
+            ></textarea>
+            <small>
+              Paste one commit per line if you already have the data handy.
+            </small>
+          </label>
+
+          <div class="form-actions">
+            <button class="btn primary" type="submit">Run analysis</button>
+            <button class="btn ghost" type="reset">Clear form</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel panel--results">
+        <div class="panel__header">
+          <p class="eyebrow">Step 2</p>
+          <h2>Review structured insights</h2>
+          <p class="subtitle">
+            Combine quality signals, convention checks, and reviewer-ready
+            summaries to keep your history clean.
+          </p>
+        </div>
+        <div class="results-grid">
+          <article class="result-card">
+            <header>
+              <p>Quality overview</p>
+              <span class="badge positive">Great</span>
+            </header>
+            <ul>
+              <li>
+                <strong>Length:</strong> Most commits fall within 30-60
+                characters.
+              </li>
+              <li>
+                <strong>Prefixes:</strong> 85% follow the Conventional Commits
+                spec.
+              </li>
+              <li>
+                <strong>Actionability:</strong> Clear intent in 9/10 messages.
+              </li>
+            </ul>
+          </article>
+          <article class="result-card">
+            <header>
+              <p>Latest commits</p>
+              <span class="badge neutral">Mixed</span>
+            </header>
+            <ol class="timeline">
+              <li>
+                <h3>feat: add advanced filters</h3>
+                <p>Includes tests and documentation.</p>
+                <span class="chip good">Pass</span>
+              </li>
+              <li>
+                <h3>update stuff</h3>
+                <p>Lacks scope and imperative verb.</p>
+                <span class="chip warn">Needs attention</span>
+              </li>
+              <li>
+                <h3>fix: guard null context</h3>
+                <p>Clear intent with reference to issue #124.</p>
+                <span class="chip good">Pass</span>
+              </li>
+            </ol>
+          </article>
+          <article class="result-card">
+            <header>
+              <p>Recommendations</p>
+              <span class="badge warn">Action</span>
+            </header>
+            <ul>
+              <li>Add more detail to generic “update” messages.</li>
+              <li>Ensure subject line stays below 72 characters.</li>
+              <li>Adopt issue references consistently.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="guidelines" class="panel panel--guidelines">
+        <div class="panel__header">
+          <p class="eyebrow">Step 3</p>
+          <h2>Share the playbook with your team</h2>
+          <p class="subtitle">
+            Keep standards visible so contributors know what good looks like.
+          </p>
+        </div>
+        <div class="guidelines">
+          <article>
+            <h3>Structure</h3>
+            <p>Use the imperative mood and keep the subject line under 72 characters.</p>
+          </article>
+          <article>
+            <h3>Scope</h3>
+            <p>Reference related issues, feature flags, or modules for quick context.</p>
+          </article>
+          <article>
+            <h3>Detail</h3>
+            <p>Explain the reason for the change, not just what changed.</p>
+          </article>
+          <article>
+            <h3>Automation</h3>
+            <p>Run linting and tests before committing to avoid noisy history.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>Built for OJT by Git Commit Message Analyzer</p>
+      <div class="footer__links">
+        <a href="#">Privacy</a>
+        <span>•</span>
+        <a href="#">Support</a>
+        <span>•</span>
+        <a href="#">GitHub Repo</a>
+      </div>
+    </footer>
+  </body>
+</html>
+
