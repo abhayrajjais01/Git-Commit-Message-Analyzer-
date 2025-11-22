@@ -59,26 +59,27 @@
             is stored — everything stays in your browser.
           </p>
         </div>
-        <form class="grid">
+        <form id="analyzer-form" class="grid">
           <label class="input-block">
             <span>Repository URL</span>
             <input
-              type="url"
+              id="repo-input"
+              type="text"
               placeholder="https://github.com/username/project"
-              required
             />
             <small>We fetch recent commits via the GitHub API.</small>
           </label>
 
           <label class="input-block">
             <span>Personal access token (optional)</span>
-            <input type="password" placeholder="ghp_xxxxxxxxxxxxx" />
+            <input id="token-input" type="password" placeholder="ghp_xxxxxxxxxxxxx" />
             <small>Only required for private repositories.</small>
           </label>
 
           <label class="input-block input-block--full">
             <span>Commit messages</span>
             <textarea
+              id="commit-input"
               rows="6"
               placeholder="feat: add OAuth flow&#10;fix: correct typo in README"
             ></textarea>
@@ -103,59 +104,13 @@
             summaries to keep your history clean.
           </p>
         </div>
-        <div class="results-grid">
+        <div id="analysis-output" class="results-grid">
           <article class="result-card">
             <header>
-              <p>Quality overview</p>
-              <span class="badge positive">Great</span>
+              <p>Waiting for input</p>
+              <span class="badge neutral">Idle</span>
             </header>
-            <ul>
-              <li>
-                <strong>Length:</strong> Most commits fall within 30-60
-                characters.
-              </li>
-              <li>
-                <strong>Prefixes:</strong> 85% follow the Conventional Commits
-                spec.
-              </li>
-              <li>
-                <strong>Actionability:</strong> Clear intent in 9/10 messages.
-              </li>
-            </ul>
-          </article>
-          <article class="result-card">
-            <header>
-              <p>Latest commits</p>
-              <span class="badge neutral">Mixed</span>
-            </header>
-            <ol class="timeline">
-              <li>
-                <h3>feat: add advanced filters</h3>
-                <p>Includes tests and documentation.</p>
-                <span class="chip good">Pass</span>
-              </li>
-              <li>
-                <h3>update stuff</h3>
-                <p>Lacks scope and imperative verb.</p>
-                <span class="chip warn">Needs attention</span>
-              </li>
-              <li>
-                <h3>fix: guard null context</h3>
-                <p>Clear intent with reference to issue #124.</p>
-                <span class="chip good">Pass</span>
-              </li>
-            </ol>
-          </article>
-          <article class="result-card">
-            <header>
-              <p>Recommendations</p>
-              <span class="badge warn">Action</span>
-            </header>
-            <ul>
-              <li>Add more detail to generic “update” messages.</li>
-              <li>Ensure subject line stays below 72 characters.</li>
-              <li>Adopt issue references consistently.</li>
-            </ul>
+            <p>Add commit messages in Step 1 or paste a repo URL, then run the analysis.</p>
           </article>
         </div>
       </section>
@@ -200,6 +155,6 @@
         <a href="#">GitHub Repo</a>
       </div>
     </footer>
+    <script src="script.js"></script>
   </body>
 </html>
-
