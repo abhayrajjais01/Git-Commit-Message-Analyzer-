@@ -25,6 +25,7 @@ window.onload = function() {
   var output = document.getElementById("analysis-output");
   var repoInput = document.getElementById("repo-input");
   var tokenInput = document.getElementById("token-input");
+  var timeline = document.getElementById("commit-timeline");
 
   if (!form || !textarea || !output) {
     console.log("Error: Could not find required elements on page");
@@ -51,32 +52,68 @@ window.onload = function() {
     if (commits.length > 0) {
       var metrics = analyzeCommits(commits);
       renderResults(output, metrics);
+      if (timeline) {
+        showTimelinePlaceholder(
+          timeline,
+          "Timeline updates when you fetch commits from GitHub."
+        );
+      }
       return;
     }
 
     if (repoValue.length > 0) {
       showLoading(output, "Fetching commits from GitHub...");
+      if (timeline) {
+        showTimelineLoading(timeline);
+      }
       fetchCommitsFromGitHub(repoValue, tokenValue)
-        .then(function(fetchedCommits) {
-          if (fetchedCommits.length === 0) {
+        .then(function(result) {
+          if (!result.messages.length) {
             showError(output, "Could not find any commits. Try pasting messages manually.");
+            if (timeline) {
+              showTimelinePlaceholder(
+                timeline,
+                "We could not load commits for this repository."
+              );
+            }
             return;
           }
-          var metrics = analyzeCommits(fetchedCommits);
+          var metrics = analyzeCommits(result.messages);
           renderResults(output, metrics);
+          if (timeline) {
+            renderCommitTimeline(timeline, result.details);
+          }
         })
         .catch(function(error) {
           var errorMessage = typeof error === "string" ? error : error.message;
           showError(output, "Error: " + (errorMessage || "Could not fetch commits from GitHub."));
+          if (timeline) {
+            showTimelinePlaceholder(
+              timeline,
+              "Could not fetch commits for this repository."
+            );
+          }
         });
       return;
     }
 
     showError(output, "Please paste commit messages OR provide a GitHub repository URL.");
+    if (timeline) {
+      showTimelinePlaceholder(
+        timeline,
+        "Provide commit messages or a repo URL to see commits."
+      );
+    }
   });
 
   form.addEventListener("reset", function() {
     showWaiting(output, "Add commit messages above or paste a repo URL, then run the analysis.");
+    if (timeline) {
+      showTimelinePlaceholder(
+        timeline,
+        "Enter a GitHub repository URL and run the analysis to see recent commits."
+      );
+    }
   });
 };
 
@@ -107,16 +144,39 @@ function fetchCommitsFromGitHub(repoUrl, token) {
     })
     .then(function(data) {
       var messages = [];
+      var details = [];
       for (var i = 0; i < data.length; i++) {
         var entry = data[i];
-        if (entry && entry.commit && entry.commit.message) {
-          var firstLine = entry.commit.message.split("\n")[0];
-          if (firstLine) {
-            messages.push(firstLine.trim());
-          }
+        if (!entry || !entry.commit) {
+          continue;
         }
+        var firstLine = entry.commit.message
+          ? entry.commit.message.split("\n")[0]
+          : "";
+        var trimmed = firstLine ? firstLine.trim() : "(no subject)";
+        if (trimmed) {
+          messages.push(trimmed);
+        }
+        var authorName =
+          (entry.commit.author && entry.commit.author.name) ||
+          (entry.commit.committer && entry.commit.committer.name) ||
+          "Unknown author";
+        var authorDate =
+          (entry.commit.author && entry.commit.author.date) ||
+          (entry.commit.committer && entry.commit.committer.date) ||
+          "";
+        details.push({
+          message: trimmed,
+          author: authorName,
+          date: authorDate,
+          sha: entry.sha ? entry.sha.substring(0, 7) : "—",
+          url: entry.html_url || ""
+        });
       }
-      return messages;
+      return {
+        messages: messages,
+        details: details
+      };
     });
 }
 
@@ -309,4 +369,94 @@ function showError(container, message) {
       '</header>' +
       '<p>' + message + '</p>' +
     '</article>';
+}
+
+function renderCommitTimeline(container, commits) {
+  if (!container) {
+    return;
+  }
+  if (!commits.length) {
+    showTimelinePlaceholder(container, "No commits to show yet.");
+    return;
+  }
+
+  var itemsHtml = "";
+  for (var i = 0; i < commits.length; i++) {
+    var commit = commits[i];
+    itemsHtml +=
+      "<li>" +
+      "<h3>" +
+      commit.message +
+      "</h3>" +
+      "<p><strong>Author:</strong> " +
+      commit.author +
+      "</p>" +
+      "<p><strong>Date:</strong> " +
+      formatCommitDate(commit.date) +
+      "</p>" +
+      "<p><strong>SHA:</strong> " +
+      commit.sha +
+      "</p>" +
+      (commit.url
+        ? '<a class="chip good" href="' +
+          commit.url +
+          '" target="_blank" rel="noopener noreferrer">View on GitHub</a>'
+        : "") +
+      "</li>";
+  }
+
+  container.innerHTML =
+    '<article class="result-card">' +
+    "<header>" +
+    "<p>Latest commits</p>" +
+    '<span class="badge positive">' +
+    commits.length +
+    " fetched</span>" +
+    "</header>" +
+    '<ol class="timeline">' +
+    itemsHtml +
+    "</ol>" +
+    "</article>";
+}
+
+function showTimelinePlaceholder(container, message) {
+  if (!container) {
+    return;
+  }
+  container.innerHTML =
+    '<article class="result-card">' +
+    "<header>" +
+    "<p>Commit timeline</p>" +
+    '<span class="badge neutral">Idle</span>' +
+    "</header>" +
+    "<p>" +
+    (message ||
+      "Enter a GitHub repository URL and run the analysis to see recent commits.") +
+    "</p>" +
+    "</article>";
+}
+
+function showTimelineLoading(container) {
+  if (!container) {
+    return;
+  }
+  container.innerHTML =
+    '<article class="result-card">' +
+    "<header>" +
+    "<p>Fetching commits</p>" +
+    '<span class="badge neutral">Working</span>' +
+    "</header>" +
+    "<p>Contacting GitHub for the latest commits...</p>" +
+    "</article>";
+}
+
+function formatCommitDate(dateString) {
+  if (!dateString) {
+    return "Unknown date";
+  }
+  var parsedDate = new Date(dateString);
+  if (isNaN(parsedDate.getTime())) {
+    return dateString;
+  }
+  return parsedDate.toLocaleString();
 }
