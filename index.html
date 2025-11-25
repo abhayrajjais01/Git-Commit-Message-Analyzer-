@@ -52,7 +52,7 @@
     <main>
       <section id="analyzer" class="panel panel--form">
         <div class="panel__header">
-          <p class="eyebrow">Step 1</p>
+          <p class="eyebrow">Analyzer Section</p>
           <h2>Provide commits to analyze</h2>
           <p class="subtitle">
             Authenticate with GitHub or drop raw commit messages below. Nothing
@@ -97,7 +97,7 @@
 
       <section class="panel panel--results">
         <div class="panel__header">
-          <p class="eyebrow">Step 2</p>
+          <p class="eyebrow">Results Section</p>
           <h2>Review structured insights</h2>
           <p class="subtitle">
             Combine quality signals, convention checks, and reviewer-ready
@@ -115,9 +115,28 @@
         </div>
       </section>
 
+      <section class="panel panel--results">
+        <div class="panel__header">
+          <p class="eyebrow">Latest Activity</p>
+          <h2>Last 10 commits</h2>
+          <p class="subtitle">
+            When you provide a GitHub repository URL we show the most recent commits below.
+          </p>
+        </div>
+        <div id="commit-timeline" class="results-grid">
+          <article class="result-card">
+            <header>
+              <p>Waiting for repository</p>
+              <span class="badge neutral">Idle</span>
+            </header>
+            <p>Enter a GitHub repository URL and run the analysis to see the 10 latest commits.</p>
+          </article>
+        </div>
+      </section>
+
       <section id="guidelines" class="panel panel--guidelines">
         <div class="panel__header">
-          <p class="eyebrow">Step 3</p>
+          <p class="eyebrow">Guidelines Section</p>
           <h2>Share the playbook with your team</h2>
           <p class="subtitle">
             Keep standards visible so contributors know what good looks like.
@@ -158,3 +177,4 @@
     <script src="script.js"></script>
   </body>
 </html>
+
