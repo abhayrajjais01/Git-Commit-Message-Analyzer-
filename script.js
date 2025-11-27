@@ -255,12 +255,23 @@ function analyzeCommits(commits) {
     warnings.push("No commits use the Conventional Commits format (feat:, fix:, etc.).");
   }
 
+  var rating = calculateRating({
+    conventionalPercent: conventionalPercent,
+    imperativePercent: imperativePercent,
+    averageLength: averageLength,
+    warningsCount: warnings.length,
+    total: commits.length,
+    longCount: longCount,
+    vagueCount: vagueCount
+  });
+
   return {
     total: commits.length,
     averageLength: averageLength,
     conventionalPercent: conventionalPercent,
     imperativePercent: imperativePercent,
-    warnings: warnings
+    warnings: warnings,
+    rating: rating
   };
 }
 
@@ -293,9 +304,79 @@ function isVague(message) {
   return false;
 }
 
+function calculateRating(metrics) {
+  var score = 0;
+  var maxScore = 100;
+  
+  // Conventional commits score (0-30 points)
+  if (metrics.conventionalPercent >= 80) {
+    score += 30;
+  } else if (metrics.conventionalPercent >= 50) {
+    score += 20;
+  } else if (metrics.conventionalPercent > 0) {
+    score += 10;
+  }
+  // 0% conventional commits gets 0 points
+  
+  // Imperative tone score (0-25 points)
+  if (metrics.imperativePercent >= 80) {
+    score += 25;
+  } else if (metrics.imperativePercent >= 50) {
+    score += 15;
+  } else if (metrics.imperativePercent > 0) {
+    score += 5;
+  }
+  
+  // Length score (0-20 points) - ideal is 30-72 chars
+  if (metrics.averageLength >= 30 && metrics.averageLength <= 72) {
+    score += 20;
+  } else if (metrics.averageLength >= 20 && metrics.averageLength < 100) {
+    score += 10;
+  } else if (metrics.averageLength >= 10) {
+    score += 5;
+  }
+  
+  // Warnings penalty (0-25 points deducted)
+  var warningPenalty = 0;
+  if (metrics.warningsCount === 0) {
+    score += 25; // Bonus for no warnings
+  } else if (metrics.warningsCount === 1) {
+    score += 15;
+  } else if (metrics.warningsCount === 2) {
+    score += 5;
+  }
+  // 3+ warnings get 0 bonus points
+  
+  // Additional penalties for critical issues
+  if (metrics.conventionalPercent === 0) {
+    score -= 10; // Heavy penalty for no conventional commits
+  }
+  if (metrics.vagueCount > metrics.total * 0.5) {
+    score -= 15; // Penalty if more than 50% are vague
+  }
+  if (metrics.longCount > metrics.total * 0.5) {
+    score -= 10; // Penalty if more than 50% are too long
+  }
+  
+  // Ensure score is between 0 and 100
+  score = Math.max(0, Math.min(100, score));
+  
+  // Determine rating based on score
+  if (score >= 75) {
+    return { level: "Good", score: score, badge: "positive" };
+  } else if (score >= 50) {
+    return { level: "Average", score: score, badge: "neutral" };
+  } else if (score >= 30) {
+    return { level: "Bad", score: score, badge: "warn" };
+  } else {
+    return { level: "Need Improvement", score: score, badge: "warn" };
+  }
+}
+
 function renderResults(container, metrics) {
   var warningBadge = metrics.warnings.length > 0 ? "warn" : "positive";
   var statusBadge = metrics.conventionalPercent >= 70 ? "Healthy" : "Mixed";
+  var rating = metrics.rating || { level: "Average", score: 50, badge: "neutral" };
 
   var warningsHtml = "";
   if (metrics.warnings.length > 0) {
@@ -308,7 +389,29 @@ function renderResults(container, metrics) {
     warningsHtml = "<p>No major issues detected. Great job!</p>";
   }
 
+  var ratingDescription = "";
+  if (rating.level === "Good") {
+    ratingDescription = "Excellent commit quality! Your commits follow best practices.";
+  } else if (rating.level === "Average") {
+    ratingDescription = "Decent commit quality. There's room for improvement in some areas.";
+  } else if (rating.level === "Bad") {
+    ratingDescription = "Commit quality needs attention. Consider following conventional commit formats.";
+  } else {
+    ratingDescription = "Commit quality requires significant improvement. Review the guidelines below.";
+  }
+
   var html = 
+    '<article class="result-card result-card--rating">' +
+      '<header>' +
+        '<p>Overall Rating</p>' +
+        '<span class="badge ' + rating.badge + ' rating-badge">' + rating.level + '</span>' +
+      '</header>' +
+      '<div class="rating-score">' +
+        '<span class="score-value">' + rating.score + '</span>' +
+        '<span class="score-label">/ 100</span>' +
+      '</div>' +
+      '<p class="rating-description">' + ratingDescription + '</p>' +
+    '</article>' +
     '<article class="result-card">' +
       '<header>' +
         '<p>Message Stats</p>' +
