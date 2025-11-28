@@ -11,9 +11,15 @@ A fully functional web application that analyzes Git commit messages for quality
   - Conventional Commits format compliance percentage
   - Imperative tone usage percentage
   - Warnings for long or vague messages
+- **Overall Rating System** that provides a comprehensive quality score:
+  - **Good** (75-100): Excellent commit quality following best practices
+  - **Average** (50-74): Decent quality with room for improvement
+  - **Bad** (30-49): Quality needs attention
+  - **Need Improvement** (0-29): Significant improvement required
 - **GitHub API integration** to fetch recent commits from any public repository
 - **Results grid** that visualizes quality metrics, insights, and recommendations
 - **Guidelines section** summarizing best practices for your team
+- **Frosted glass UI** with transparent backgrounds and backdrop blur effects
 - **Responsive design** that works on desktop and mobile devices
 
 ## Getting Started
