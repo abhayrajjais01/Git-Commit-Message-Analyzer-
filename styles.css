@@ -96,7 +96,6 @@ img {
   border: 1px solid rgba(99, 102, 241, 0.35);
   color: var(--text-primary);
   background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(8px);
 }
 
 .btn:hover {
@@ -109,7 +108,6 @@ img {
   padding: 2rem;
   box-shadow: var(--shadow-lg);
   border: 1px solid rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(14px);
 }
 
 .card__header {
