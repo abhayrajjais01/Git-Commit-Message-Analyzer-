@@ -1,5 +1,14 @@
+// script.js
+// Git Commit Message Analyzer - runs in-browser. Handles UI interactions,
+// optional GitHub API fetch for the latest commits, and computes quality
+// metrics for commit subject lines (conventional commits, imperative tone,
+// length, and vagueness heuristics).
+
+// Regular expression used to detect Conventional Commits-style prefixes
+// Matches: "feat:", "fix(scope):", "docs:", etc.
 var conventionalPattern = /^(feat|fix|chore|docs|style|refactor|perf|test|build|ci|revert|hotfix)(\(.+\))?:\s+/i;
 
+// Imperative verbs recognized by the analyzer (used to check imperative mood)
 var imperativeVerbs = [
   "add",
   "fix",
@@ -18,7 +27,9 @@ var imperativeVerbs = [
   "release",
   "bump"
 ];
-
+// Entry point: wire up event handlers after DOM is ready.
+// - Submits the analyzer form, reads inputs, and triggers analysis or
+//   a GitHub fetch depending on provided values.
 window.onload = function() {
   var form = document.getElementById("analyzer-form");
   var textarea = document.getElementById("commit-input");
@@ -26,11 +37,6 @@ window.onload = function() {
   var repoInput = document.getElementById("repo-input");
   var tokenInput = document.getElementById("token-input");
   var timeline = document.getElementById("commit-timeline");
-
-  if (!form || !textarea || !output) {
-    console.log("Error: Could not find required elements on page");
-    return;
-  }
 
   form.addEventListener("submit", function(event) {
     event.preventDefault();
@@ -47,18 +53,6 @@ window.onload = function() {
       if (trimmed.length > 0) {
         commits.push(trimmed);
       }
-    }
-
-    if (commits.length > 0) {
-      var metrics = analyzeCommits(commits);
-      renderResults(output, metrics);
-      if (timeline) {
-        showTimelinePlaceholder(
-          timeline,
-          "Timeline updates when you fetch commits from GitHub."
-        );
-      }
-      return;
     }
 
     if (repoValue.length > 0) {
@@ -117,10 +111,18 @@ window.onload = function() {
   });
 };
 
+/**
+ * Fetch the most recent commits from a GitHub repository using the REST API.
+ * Returns the subject lines and lightweight metadata for display in the timeline.
+ * @param {string} repoUrl - repository URL or path (e.g. https://github.com/user/repo)
+ * @param {string} token - optional GitHub personal access token for private repos/
+ *                         higher rate limits
+ * @returns {Promise<{messages: string[], details: Object[]}>}
+ */
 function fetchCommitsFromGitHub(repoUrl, token) {
   var parsed = parseRepoUrl(repoUrl);
   if (!parsed) {
-    return Promise.reject("Invalid repository URL. Example: https://github.com/facebook/react");
+    return Promise.reject("Invalid GitHub repository URL.");
   }
 
   var apiUrl = "https://api.github.com/repos/" + parsed.owner + "/" + parsed.name + "/commits?per_page=10";
@@ -181,6 +183,8 @@ function fetchCommitsFromGitHub(repoUrl, token) {
 }
 
 function parseRepoUrl(rawUrl) {
+  // Parse a raw repository URL or shorthand into { owner, name }.
+  // Accepts full URLs or shorthand like `github.com/user/repo` or `user/repo`.
   if (!rawUrl) {
     return null;
   }
@@ -210,6 +214,9 @@ function parseRepoUrl(rawUrl) {
 }
 
 function analyzeCommits(commits) {
+  // Compute metrics over an array of commit subject lines:
+  // - average length, percent matching conventional commits
+  // - percent using imperative mood, number of warnings, and overall rating
   var totalLength = 0;
   var conventionalCount = 0;
   var imperativeCount = 0;
@@ -276,6 +283,9 @@ function analyzeCommits(commits) {
 }
 
 function isImperative(message) {
+  // Strip conventional prefix (if present) and check the first word against
+  // the list of imperative verbs. Returns true when subject appears to be
+  // in the imperative mood.
   var cleaned = message.replace(conventionalPattern, "").trim();
   var parts = cleaned.split(/\s+/);
   var firstWord = parts[0] ? parts[0].toLowerCase() : "";
@@ -289,22 +299,28 @@ function isImperative(message) {
 }
 
 function isVague(message) {
+  // Heuristic checks for vague or overly short commit subjects. This is
+  // intentionally simple — it catches obvious cases like "update" or "stuff"
+  // and very short messages that likely lack useful context.
   var lowercase = message.toLowerCase();
-  
-  if (lowercase.startsWith("update") || 
-      lowercase.startsWith("changes") || 
+
+  if (lowercase.startsWith("update") ||
+      lowercase.startsWith("changes") ||
       lowercase.startsWith("stuff")) {
     return true;
   }
-  
+
   if (lowercase.length < 10) {
     return true;
   }
-  
+
   return false;
 }
 
 function calculateRating(metrics) {
+  // Combine multiple metrics into a single 0-100 score and produce a
+  // human-friendly rating level and badge. Input `metrics` should include:
+  // { conventionalPercent, imperativePercent, averageLength, warningsCount, total, longCount, vagueCount }
   var score = 0;
   var maxScore = 100;
   
@@ -374,6 +390,7 @@ function calculateRating(metrics) {
 }
 
 function renderResults(container, metrics) {
+  // Render the analysis results into HTML cards. `metrics` comes from analyzeCommits().
   var warningBadge = metrics.warnings.length > 0 ? "warn" : "positive";
   var statusBadge = metrics.conventionalPercent >= 70 ? "Healthy" : "Mixed";
   var rating = metrics.rating || { level: "Average", score: 50, badge: "neutral" };
@@ -442,6 +459,7 @@ function renderResults(container, metrics) {
 }
 
 function showWaiting(container, message) {
+  // Display a neutral 'waiting for input' card in the results area.
   container.innerHTML = 
     '<article class="result-card">' +
       '<header>' +
@@ -453,6 +471,7 @@ function showWaiting(container, message) {
 }
 
 function showLoading(container, message) {
+  // Display a loading/working card while analysis or network calls are in progress.
   container.innerHTML = 
     '<article class="result-card">' +
       '<header>' +
@@ -464,6 +483,7 @@ function showLoading(container, message) {
 }
 
 function showError(container, message) {
+  // Display an error card when something goes wrong (validation or network).
   container.innerHTML = 
     '<article class="result-card">' +
       '<header>' +
@@ -475,6 +495,7 @@ function showError(container, message) {
 }
 
 function renderCommitTimeline(container, commits) {
+  // Render the timeline (list) of fetched commits including author/date/sha.
   if (!container) {
     return;
   }
@@ -523,6 +544,7 @@ function renderCommitTimeline(container, commits) {
 }
 
 function showTimelinePlaceholder(container, message) {
+  // Placeholder content shown when no timeline data is available.
   if (!container) {
     return;
   }
@@ -540,6 +562,7 @@ function showTimelinePlaceholder(container, message) {
 }
 
 function showTimelineLoading(container) {
+  // Visual indicator used while commits are being fetched for the timeline.
   if (!container) {
     return;
   }
@@ -554,6 +577,7 @@ function showTimelineLoading(container) {
 }
 
 function formatCommitDate(dateString) {
+  // Format an ISO date string for display; fall back to original string if parse fails.
   if (!dateString) {
     return "Unknown date";
   }
