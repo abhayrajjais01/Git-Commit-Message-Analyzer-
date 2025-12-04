@@ -37,6 +37,7 @@ window.onload = function() {
   var repoInput = document.getElementById("repo-input");
   var tokenInput = document.getElementById("token-input");
   var timeline = document.getElementById("commit-timeline");
+  var languagesContainer = document.getElementById("languages-usage");
 
   form.addEventListener("submit", function(event) {
     event.preventDefault();
@@ -60,6 +61,9 @@ window.onload = function() {
       if (timeline) {
         showTimelineLoading(timeline);
       }
+      if (languagesContainer) {
+        showLanguagesLoading(languagesContainer);
+      }
       fetchCommitsFromGitHub(repoValue, tokenValue)
         .then(function(result) {
           if (!result.messages.length) {
@@ -70,12 +74,21 @@ window.onload = function() {
                 "We could not load commits for this repository."
               );
             }
+            if (languagesContainer) {
+              showLanguagesPlaceholder(
+                languagesContainer,
+                "We could not load languages for this repository."
+              );
+            }
             return;
           }
           var metrics = analyzeCommits(result.messages);
           renderResults(output, metrics);
           if (timeline) {
             renderCommitTimeline(timeline, result.details);
+          }
+          if (languagesContainer) {
+            renderLanguagesChart(languagesContainer, result.languages || {});
           }
         })
         .catch(function(error) {
@@ -85,6 +98,12 @@ window.onload = function() {
             showTimelinePlaceholder(
               timeline,
               "Could not fetch commits for this repository."
+            );
+          }
+          if (languagesContainer) {
+            showLanguagesPlaceholder(
+              languagesContainer,
+              "Could not fetch languages for this repository."
             );
           }
         });
@@ -108,6 +127,12 @@ window.onload = function() {
         "Enter a GitHub repository URL and run the analysis to see recent commits."
       );
     }
+    if (languagesContainer) {
+      showLanguagesPlaceholder(
+        languagesContainer,
+        "Enter a GitHub repository URL and run the analysis to see language usage."
+      );
+    }
   });
 };
 
@@ -117,7 +142,7 @@ window.onload = function() {
  * @param {string} repoUrl - repository URL or path (e.g. https://github.com/user/repo)
  * @param {string} token - optional GitHub personal access token for private repos/
  *                         higher rate limits
- * @returns {Promise<{messages: string[], details: Object[]}>}
+ * @returns {Promise<{messages: string[], details: Object[], languages: Object}>}
  */
 function fetchCommitsFromGitHub(repoUrl, token) {
   var parsed = parseRepoUrl(repoUrl);
@@ -126,6 +151,7 @@ function fetchCommitsFromGitHub(repoUrl, token) {
   }
 
   var apiUrl = "https://api.github.com/repos/" + parsed.owner + "/" + parsed.name + "/commits?per_page=10";
+  var languagesUrl = "https://api.github.com/repos/" + parsed.owner + "/" + parsed.name + "/languages";
 
   var options = {
     headers: {
@@ -137,7 +163,7 @@ function fetchCommitsFromGitHub(repoUrl, token) {
     options.headers["Authorization"] = "Bearer " + token;
   }
 
-  return fetch(apiUrl, options)
+  var commitsPromise = fetch(apiUrl, options)
     .then(function(response) {
       if (!response.ok) {
         throw new Error("GitHub API returned error: " + response.status);
@@ -180,6 +206,28 @@ function fetchCommitsFromGitHub(repoUrl, token) {
         details: details
       };
     });
+
+  var languagesPromise = fetch(languagesUrl, options)
+    .then(function(response) {
+      if (!response.ok) {
+        // If languages endpoint fails (e.g., permissions), just return empty data
+        return {};
+      }
+      return response.json();
+    })
+    .catch(function() {
+      return {};
+    });
+
+  return Promise.all([commitsPromise, languagesPromise]).then(function(results) {
+    var commitsData = results[0];
+    var languagesData = results[1] || {};
+    return {
+      messages: commitsData.messages,
+      details: commitsData.details,
+      languages: languagesData
+    };
+  });
 }
 
 function parseRepoUrl(rawUrl) {
@@ -573,6 +621,100 @@ function showTimelineLoading(container) {
     '<span class="badge neutral">Working</span>' +
     "</header>" +
     "<p>Contacting GitHub for the latest commits...</p>" +
+    "</article>";
+}
+
+function renderLanguagesChart(container, languages) {
+  // Render a simple horizontal bar chart for languages using bytes of code.
+  if (!container) {
+    return;
+  }
+
+  var keys = Object.keys(languages || {});
+  if (!keys.length) {
+    showLanguagesPlaceholder(
+      container,
+      "No language data was reported for this repository."
+    );
+    return;
+  }
+
+  var totalBytes = 0;
+  for (var i = 0; i < keys.length; i++) {
+    totalBytes += languages[keys[i]] || 0;
+  }
+  if (totalBytes === 0) {
+    showLanguagesPlaceholder(
+      container,
+      "No language data was reported for this repository."
+    );
+    return;
+  }
+
+  // Sort languages descending by bytes
+  keys.sort(function(a, b) {
+    return (languages[b] || 0) - (languages[a] || 0);
+  });
+
+  var itemsHtml = "";
+  for (var j = 0; j < keys.length; j++) {
+    var lang = keys[j];
+    var bytes = languages[lang] || 0;
+    var percent = (bytes / totalBytes) * 100;
+    var percentLabel = percent.toFixed(1).replace(/\.0$/, "");
+
+    itemsHtml +=
+      '<div class="language-row">' +
+        '<div class="language-row-header">' +
+          "<span>" + lang + "</span>" +
+          "<span>" + percentLabel + "%</span>" +
+        "</div>" +
+        '<div class="language-bar-track">' +
+          '<div class="language-bar-fill" style="width: ' + percent + '%;"></div>' +
+        "</div>" +
+      "</div>";
+  }
+
+  container.innerHTML =
+    '<article class="result-card">' +
+      "<header>" +
+        "<p>Language usage</p>" +
+        '<span class="badge positive">' + keys.length + " languages</span>" +
+      "</header>" +
+      '<div class="languages-chart">' +
+        itemsHtml +
+      "</div>" +
+    "</article>";
+}
+
+function showLanguagesPlaceholder(container, message) {
+  if (!container) {
+    return;
+  }
+  container.innerHTML =
+    '<article class="result-card">' +
+      "<header>" +
+        "<p>Repository languages</p>" +
+        '<span class="badge neutral">Idle</span>' +
+      "</header>" +
+      "<p>" +
+        (message ||
+          "Enter a GitHub repository URL and run the analysis to see language usage.") +
+      "</p>" +
+    "</article>";
+}
+
+function showLanguagesLoading(container) {
+  if (!container) {
+    return;
+  }
+  container.innerHTML =
+    '<article class="result-card">' +
+      "<header>" +
+        "<p>Loading languages</p>" +
+        '<span class="badge neutral">Working</span>' +
+      "</header>" +
+      "<p>Contacting GitHub for repository language statistics...</p>" +
     "</article>";
 }
 
