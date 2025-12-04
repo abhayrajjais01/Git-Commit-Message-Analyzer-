@@ -270,6 +270,8 @@ function analyzeCommits(commits) {
   var imperativeCount = 0;
   var longCount = 0;
   var vagueCount = 0;
+  var longMessages = [];
+  var vagueMessages = [];
 
   for (var i = 0; i < commits.length; i++) {
     var message = commits[i];
@@ -286,10 +288,12 @@ function analyzeCommits(commits) {
 
     if (message.length > 72) {
       longCount += 1;
+      longMessages.push(message);
     }
 
     if (isVague(message)) {
       vagueCount += 1;
+      vagueMessages.push(message);
     }
   }
 
@@ -326,7 +330,9 @@ function analyzeCommits(commits) {
     conventionalPercent: conventionalPercent,
     imperativePercent: imperativePercent,
     warnings: warnings,
-    rating: rating
+    rating: rating,
+    longMessages: longMessages,
+    vagueMessages: vagueMessages
   };
 }
 
@@ -450,6 +456,46 @@ function renderResults(container, metrics) {
       warningsHtml += "<li>" + metrics.warnings[i] + "</li>";
     }
     warningsHtml += "</ul>";
+
+    // Show specific commits that need improvement (too long or vague)
+    var hasLong = metrics.longMessages && metrics.longMessages.length > 0;
+    var hasVague = metrics.vagueMessages && metrics.vagueMessages.length > 0;
+
+    if (hasLong || hasVague) {
+      warningsHtml += '<div class="warning-commits">';
+
+      if (hasLong) {
+        warningsHtml += "<h4>Commits longer than 72 characters</h4><ul>";
+        var maxLong = Math.min(metrics.longMessages.length, 5);
+        for (var j = 0; j < maxLong; j++) {
+          warningsHtml += "<li>" + escapeHtml(metrics.longMessages[j]) + "</li>";
+        }
+        if (metrics.longMessages.length > maxLong) {
+          warningsHtml +=
+            "<li>+" +
+            (metrics.longMessages.length - maxLong) +
+            " more long commit(s)...</li>";
+        }
+        warningsHtml += "</ul>";
+      }
+
+      if (hasVague) {
+        warningsHtml += "<h4>Commits that look vague</h4><ul>";
+        var maxVague = Math.min(metrics.vagueMessages.length, 5);
+        for (var k = 0; k < maxVague; k++) {
+          warningsHtml += "<li>" + escapeHtml(metrics.vagueMessages[k]) + "</li>";
+        }
+        if (metrics.vagueMessages.length > maxVague) {
+          warningsHtml +=
+            "<li>+" +
+            (metrics.vagueMessages.length - maxVague) +
+            " more vague commit(s)...</li>";
+        }
+        warningsHtml += "</ul>";
+      }
+
+      warningsHtml += "</div>";
+    }
   } else {
     warningsHtml = "<p>No major issues detected. Great job!</p>";
   }
@@ -716,6 +762,19 @@ function showLanguagesLoading(container) {
       "</header>" +
       "<p>Contacting GitHub for repository language statistics...</p>" +
     "</article>";
+}
+
+// Simple HTML escaping helper for safely rendering commit messages
+function escapeHtml(str) {
+  if (typeof str !== "string") {
+    return "";
+  }
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function formatCommitDate(dateString) {
