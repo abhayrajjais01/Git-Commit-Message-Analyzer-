@@ -66,22 +66,22 @@ window.onload = function() {
       }
       fetchCommitsFromGitHub(repoValue, tokenValue)
         .then(function(result) {
-          if (!result.messages.length) {
-            showError(output, "Could not find any commits. Try pasting messages manually.");
-            if (timeline) {
-              showTimelinePlaceholder(
-                timeline,
-                "We could not load commits for this repository."
-              );
-            }
-            if (languagesContainer) {
-              showLanguagesPlaceholder(
-                languagesContainer,
-                "We could not load languages for this repository."
-              );
-            }
-            return;
-          }
+          // if (!result.messages.length) {
+          //   showError(output, "Could not find any commits. Try pasting messages manually.");
+          //   if (timeline) {
+          //     showTimelinePlaceholder(
+          //       timeline,
+          //       "We could not load commits for this repository."
+          //     );
+          //   }
+          //   if (languagesContainer) {
+          //     showLanguagesPlaceholder(
+          //       languagesContainer,
+          //       "We could not load languages for this repository."
+          //     );
+          //   }
+          //   return;
+          // }
           var metrics = analyzeCommits(result.messages);
           renderResults(output, metrics);
           if (timeline) {
@@ -110,13 +110,13 @@ window.onload = function() {
       return;
     }
 
-    showError(output, "Please paste commit messages OR provide a GitHub repository URL.");
-    if (timeline) {
-      showTimelinePlaceholder(
-        timeline,
-        "Provide commit messages or a repo URL to see commits."
-      );
-    }
+    // showError(output, "Please paste commit messages OR provide a GitHub repository URL.");
+    // if (timeline) {
+    //   showTimelinePlaceholder(
+    //     timeline,
+    //     "Provide commit messages or a repo URL to see commits."
+    //   );
+    // }
   });
 
   form.addEventListener("reset", function() {
@@ -215,9 +215,9 @@ function fetchCommitsFromGitHub(repoUrl, token) {
       }
       return response.json();
     })
-    .catch(function() {
-      return {};
-    });
+    // .catch(function() {
+    //   return {};
+    // });
 
   return Promise.all([commitsPromise, languagesPromise]).then(function(results) {
     var commitsData = results[0];
