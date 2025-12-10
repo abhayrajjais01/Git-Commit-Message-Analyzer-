@@ -82,14 +82,17 @@ window.onload = function() {
           //   }
           //   return;
           // }
-          var metrics = analyzeCommits(result.messages);
-          renderResults(output, metrics);
-          if (timeline) {
-            renderCommitTimeline(timeline, result.details);
-          }
-          if (languagesContainer) {
-            renderLanguagesChart(languagesContainer, result.languages || {});
-          }
+          // Add 2-second delay before displaying results
+          setTimeout(function() {
+            var metrics = analyzeCommits(result.messages);
+            renderResults(output, metrics);
+            if (timeline) {
+              renderCommitTimeline(timeline, result.details);
+            }
+            if (languagesContainer) {
+              renderLanguagesChart(languagesContainer, result.languages || {});
+            }
+          }, 2000);
         })
         .catch(function(error) {
           var errorMessage = typeof error === "string" ? error : error.message;
