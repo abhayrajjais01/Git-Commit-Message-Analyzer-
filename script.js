@@ -82,14 +82,17 @@ window.onload = function() {
           //   }
           //   return;
           // }
-          var metrics = analyzeCommits(result.messages);
-          renderResults(output, metrics);
-          if (timeline) {
-            renderCommitTimeline(timeline, result.details);
-          }
-          if (languagesContainer) {
-            renderLanguagesChart(languagesContainer, result.languages || {});
-          }
+          // Add 2-second delay before displaying results
+          setTimeout(function() {
+            var metrics = analyzeCommits(result.messages);
+            renderResults(output, metrics);
+            if (timeline) {
+              renderCommitTimeline(timeline, result.details);
+            }
+            if (languagesContainer) {
+              renderLanguagesChart(languagesContainer, result.languages || {});
+            }
+          }, 2000);
         })
         .catch(function(error) {
           var errorMessage = typeof error === "string" ? error : error.message;
@@ -110,13 +113,41 @@ window.onload = function() {
       return;
     }
 
-    // showError(output, "Please paste commit messages OR provide a GitHub repository URL.");
-    // if (timeline) {
-    //   showTimelinePlaceholder(
-    //     timeline,
-    //     "Provide commit messages or a repo URL to see commits."
-    //   );
-    // }
+    // Handle manual commit analysis when no repository URL is provided.
+    if (!commits.length) {
+      showError(
+        output,
+        "Please paste at least one commit message or provide a GitHub repository URL."
+      );
+      if (timeline) {
+        showTimelinePlaceholder(
+          timeline,
+          "Provide commit messages or a repo URL to see commits."
+        );
+      }
+      if (languagesContainer) {
+        showLanguagesPlaceholder(
+          languagesContainer,
+          "Enter a GitHub repository URL to see language usage."
+        );
+      }
+      return;
+    }
+
+    var metrics = analyzeCommits(commits);
+    renderResults(output, metrics);
+    if (timeline) {
+      showTimelinePlaceholder(
+        timeline,
+        "Timeline is only available when fetching commits from GitHub."
+      );
+    }
+    if (languagesContainer) {
+      showLanguagesPlaceholder(
+        languagesContainer,
+        "Language usage is only available when a repository is provided."
+      );
+    }
   });
 
   form.addEventListener("reset", function() {
